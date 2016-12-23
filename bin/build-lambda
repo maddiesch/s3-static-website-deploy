@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+cd lambda/push-hook
+zip -r ../../tmp/lambda-push-hook-1-0-0.zip index.js
+
+cd -
+
+cd lambda/s3-code-deploy
+yarn install
+zip -r ../../tmp/s3-code-deploy-1-0-0.zip index.js node_modules/
+
+cd -

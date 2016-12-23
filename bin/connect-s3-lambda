@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require 'aws-sdk'
+require 'optparse'
+
+options = {}
+
+OptionParser.new do |opts|
+  opts.on('-b', '--bucket BUCKET', 'The S3 bucket name') do |bucket|
+    options[:bucket] = bucket
+  end
+  opts.on('-l', '--lambda LAMBDA', 'The Lambda function ARN') do |lambda_arn|
+    options[:lambda_arn] = lambda_arn
+  end
+  opts.on('-p', '--profile PROFILE', 'The AWS profile to use') do |profile|
+    options[:profile] = profile
+  end
+end.parse!
+
+raise 'Missing bucket name `-b bucket-name`' if options[:bucket].nil?
+raise 'Missing Lambda ARN `-l lambda-arn`' if options[:lambda_arn].nil?
+
+Aws.config[:credentials] = Aws::SharedCredentials.new(
+  profile_name: options[:profile]
+)
+
+bucket = Aws::S3::Bucket.new name: options[:bucket]
+
+config = {
+  lambda_function_arn: options[:lambda_arn],
+  events: ['s3:ObjectCreated:*'],
+  filter: {
+    key: {
+      filter_rules: [
+        {
+          name: 'prefix',
+          value: 'build/'
+        },
+        {
+          name: 'suffix',
+          value: '.zip'
+        }
+      ]
+    }
+  }
+}
+
+bucket.notification.put(notification_configuration: { lambda_function_configurations: [config] })
