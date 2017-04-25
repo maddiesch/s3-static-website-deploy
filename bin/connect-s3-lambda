@@ -34,7 +34,7 @@ config = {
       filter_rules: [
         {
           name: 'prefix',
-          value: 'build/'
+          value: 'build-output/'
         },
         {
           name: 'suffix',
