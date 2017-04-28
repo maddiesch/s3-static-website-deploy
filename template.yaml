@@ -47,11 +47,11 @@ Parameters:
   LambdaPushHook:
     Type: String
     Description: The name of the Push Hook package
-    Default: lambda-push-hook-1-0-0.zip
+    Default: lambda-push-hook-1-0-1.zip
   LambdaS3Deploy:
     Type: String
     Description: The name of the S3 Deploy package
-    Default: s3-code-deploy-1-0-0.zip
+    Default: s3-code-deploy-1-0-1.zip
   IndexDocumentName:
     Type: String
     Description: The name of the index document for S3 web-hosting
