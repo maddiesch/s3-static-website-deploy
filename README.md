@@ -73,19 +73,3 @@ Head to your GitHub repo.  `Settings -> Webhooks -> Add webhook`
 The default config is fine.
 
 For the `Payload URL` paste in the value from `HookURL` in the template outputs.
-
-### Add a bucket policy
-
-[There is a bug](https://forums.aws.amazon.com/thread.jspa?messageID=748171) when creating a bucket policy in CloudFormation.  Because of this, it need to be done manually.
-
-```json
-{
-	"Version": "2012-10-17",
-	"Statement": [{
-		"Effect": "Allow",
-		"Principal": "*",
-		"Action": "s3:GetObject",
-		"Resource": "arn:aws:s3:::<# Value from template output: DeployBucketInfo #>/*"
-	}]
-}
-```

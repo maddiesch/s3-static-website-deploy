@@ -252,6 +252,7 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
+                  - s3:PutObjectAcl
                 Resource:
                   - !Sub
                     - "arn:aws:s3:::${Bucket}/*"
@@ -373,26 +374,6 @@ Resources:
         - "arn:aws:s3:::${Bucket}"
         -
           Bucket: !Ref DeployBucket
-
-  ## S3 bucket policy seems to be hosed in CF https://forums.aws.amazon.com/thread.jspa?messageID=748171
-  # S3DeployBucketPublic:
-  #   Type: AWS::S3::BucketPolicy
-  #   Properties:
-  #     Bucket: !Ref DeployBucket
-  #     PolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         -
-  #           Effect: Allow
-  #           Action:
-  #             - s3:GetObject
-  #           Resource:
-  #             - !Sub
-  #               - "arn:aws:s3:::${Bucket}/*"
-  #               -
-  #                 Bucket: !Ref DeployBucket
-
-
 Outputs:
   DeployBucketInfo:
     Description: The bucket being deployed to.
