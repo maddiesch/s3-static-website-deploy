@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Stating website generation & deployment to s3
+Description: Static website generation & deployment to s3
 
 Parameters:
   ProjectName:
@@ -8,7 +8,10 @@ Parameters:
     MinLength: 1
   DomainName:
     Type: String
-    Description: The domain name you'll use for the static site
+    Description: The domain name you'll use for the static site (this will also be the S3 bucket)
+  CertificateArn:
+    Type: String
+    Description: Arn for the Certificate Manager certificate to attach to the CloudFront distribution
   BuildImageName:
     Type: String
     Description: The docker image name used to build the code/
@@ -70,7 +73,7 @@ Parameters:
 
 Resources:
 
-  # The s3 bucket that will host the website
+  # The s3 bucket that hosts the website
   DeployBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -79,7 +82,50 @@ Resources:
         IndexDocument: !Ref IndexDocumentName
         ErrorDocument: !Ref ErrorDocumentName
 
-  # The CodeBuild project that will build the static site
+  # CloudFront distribution for CDN and SSL termination
+  CloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref DomainName
+        DefaultRootObject: index.html
+        Origins:
+          - DomainName: !Sub ${DomainName}.s3-website-${AWS::Region}.amazonaws.com
+            Id: !Sub s3-${DomainName}
+            CustomOriginConfig:
+              HTTPPort: '80'
+              HTTPSPort: '443'
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub s3-${DomainName}
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          DefaultTTL: '0'
+          MinTTL: '0'
+          MaxTTL: '0'
+          Compress: true
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: 'true'
+            Cookies:
+              Forward: none
+        Enabled: true
+        HttpVersion: http2
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+
+  # The CodeBuild project builds the static site
   DeployBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -99,7 +145,8 @@ Resources:
         Location: !Ref DeployBucket
         # This doesn't really matter.  It's overriden by the lambda function
         Name: build-output
-  # The Lambda function that API-Gateway will call to trigger the build proccess from a GH push hook
+
+  # The Lambda function that API-Gateway calls to trigger the build proccess from a GH push hook
   LambdaPushHookHandler:
     Type: AWS::Lambda::Function
     Properties:
