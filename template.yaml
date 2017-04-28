@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Static website generation & deployment to s3
 
 Parameters:
-  ProjectName:
-    Type: String
-    Description: The name of the project
-    MinLength: 1
   DomainName:
     Type: String
     Description: The domain name you'll use for the static site (this will also be the S3 bucket)
@@ -129,8 +125,8 @@ Resources:
   DeployBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Join [ "-", [ "build", !Ref ProjectName ]]
-      Description: !Join [ " ", [ !Ref ProjectName, "build deployment" ]]
+      Name: !Sub build-${AWS::StackName}
+      Description: !Sub Build deployment ${AWS::StackName}
       Environment:
         ComputeType: !Ref BuildComputeType
         Type: LINUX_CONTAINER
@@ -183,14 +179,12 @@ Resources:
           SITE_ROOT: !Ref ArchiveSiteRoot
           SNS_TOPIC_ARN: !Ref DeployNotificationTopic
           SNS_SUBJECT: !Sub
-            - "${Name} ${Domain} Deployed"
+            - "${AWS::StackName} ${Domain} Deployed"
             -
-              Name: !Ref ProjectName
               Domain: !Ref DomainName
           SNS_MESSAGE: !Sub
-            - "${Name} deployed to ${Bucket} -- ${Location}"
+            - "${AWS::StackName} deployed to ${Bucket} -- ${Location}"
             -
-              Name: !Ref ProjectName
               Bucket: !Ref DeployBucket
               Location: !GetAtt DeployBucket.WebsiteURL
 
@@ -201,10 +195,7 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Description: "GitHub Push Hooks API"
-      Name: !Sub
-        - "github-push-hook-${Project}"
-        -
-          Project: !Ref ProjectName
+      Name: !Sub github-push-hook-${AWS::StackName}
   GitHubHooksResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -378,14 +369,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Sub
-                    - "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${Name}"
-                    -
-                      Name: !Ref ProjectName
-                  - !Sub
-                    - "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${Name}:*"
-                    -
-                      Name: !Ref ProjectName
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${AWS::StackName}
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${AWS::StackName}:*"
         -
           PolicyName: s3-put-artifacts
           PolicyDocument:
