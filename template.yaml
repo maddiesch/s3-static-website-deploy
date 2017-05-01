@@ -140,7 +140,7 @@ Resources:
         Type: S3
         Location: !Ref DeployBucket
         # This doesn't really matter.  It's overriden by the lambda function
-        Name: build-output
+        Name: build
 
   # The Lambda function that API-Gateway calls to trigger the build proccess from a GH push hook
   LambdaPushHookHandler:
@@ -357,27 +357,23 @@ Resources:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: cloud-watch-logs
+        - PolicyName: cloud-watch-logs
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${AWS::StackName}
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${AWS::StackName}:*"
-        -
-          PolicyName: s3-put-artifacts
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/build-${AWS::StackName}:*
+        - PolicyName: s3-put-artifacts
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - s3:PutObject
                 Resource:
