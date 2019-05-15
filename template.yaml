@@ -68,7 +68,6 @@ Parameters:
     Default: build
 
 Resources:
-
   # The s3 bucket that hosts the website
   DeployBucket:
     Type: AWS::S3::Bucket
@@ -90,8 +89,8 @@ Resources:
           - DomainName: !Sub ${DomainName}.s3-website-${AWS::Region}.amazonaws.com
             Id: !Sub s3-${DomainName}
             CustomOriginConfig:
-              HTTPPort: '80'
-              HTTPSPort: '443'
+              HTTPPort: "80"
+              HTTPSPort: "443"
               OriginProtocolPolicy: http-only
               OriginSSLProtocols:
                 - TLSv1
@@ -106,13 +105,13 @@ Resources:
           CachedMethods:
             - GET
             - HEAD
-          DefaultTTL: '0'
-          MinTTL: '0'
-          MaxTTL: '0'
+          DefaultTTL: "0"
+          MinTTL: "0"
+          MaxTTL: "0"
           Compress: true
           ViewerProtocolPolicy: redirect-to-https
           ForwardedValues:
-            QueryString: 'true'
+            QueryString: "true"
             Cookies:
               Forward: none
         Enabled: true
@@ -148,7 +147,7 @@ Resources:
     Properties:
       Role: !GetAtt LambdaPushHookHandlerRole.Arn
       Description: Handler function for GitHub push hooks
-      Runtime: nodejs4.3
+      Runtime: nodejs8.10
       Timeout: 10
       MemorySize: 128
       Handler: index.handler
@@ -166,7 +165,7 @@ Resources:
     Properties:
       Role: !GetAtt LambdaS3DeployRole.Arn
       Description: Deflate the build archive from s3 and put into bucket
-      Runtime: nodejs4.3
+      Runtime: nodejs8.10
       Timeout: 10
       MemorySize: 256
       Handler: index.handler
@@ -180,12 +179,10 @@ Resources:
           SNS_TOPIC_ARN: !Ref DeployNotificationTopic
           SNS_SUBJECT: !Sub
             - "${AWS::StackName} ${Domain} Deployed"
-            -
-              Domain: !Ref DomainName
+            - Domain: !Ref DomainName
           SNS_MESSAGE: !Sub
             - "${AWS::StackName} deployed to ${Bucket} -- ${Location}"
-            -
-              Bucket: !Ref DeployBucket
+            - Bucket: !Ref DeployBucket
               Location: !GetAtt DeployBucket.WebsiteURL
 
   #
@@ -200,13 +197,13 @@ Resources:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt GitHubPushHookRestApi.RootResourceId
-      PathPart: 'hooks'
+      PathPart: "hooks"
       RestApiId: !Ref GitHubPushHookRestApi
   GitHubPushHookPushResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref GitHubHooksResource
-      PathPart: 'push'
+      PathPart: "push"
       RestApiId: !Ref GitHubPushHookRestApi
   GitHubPushHookPushMethod:
     DependsOn: PushHandlerLambdaInvokePermission
@@ -220,15 +217,12 @@ Resources:
         Type: AWS
         IntegrationHttpMethod: POST
         IntegrationResponses:
-          -
-            StatusCode: 200
+          - StatusCode: 200
         Uri: !Sub
           - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
-          -
-            LambdaArn: !GetAtt LambdaPushHookHandler.Arn
+          - LambdaArn: !GetAtt LambdaPushHookHandler.Arn
       MethodResponses:
-        -
-          StatusCode: 200
+        - StatusCode: 200
 
   GitHubPushHookRestApiStage:
     Type: AWS::ApiGateway::Stage
@@ -247,10 +241,8 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        -
-          Protocol: email
+        - Protocol: email
           Endpoint: !Ref DeployNotificationEmail
-
 
   #
   # Policies
@@ -261,32 +253,27 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: cloud-watch-logs
+        - PolicyName: cloud-watch-logs
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
                   - !Sub "arn:aws:logs:*:*:*"
-        -
-          PolicyName: s3-code-deploy
+        - PolicyName: s3-code-deploy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:PutObject
@@ -294,15 +281,12 @@ Resources:
                 Resource:
                   - !Sub
                     - "arn:aws:s3:::${Bucket}/*"
-                    -
-                      Bucket: !Ref DeployBucket
-        -
-          PolicyName: sns-notify-deploy
+                    - Bucket: !Ref DeployBucket
+        - PolicyName: sns-notify-deploy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action: SNS:Publish
                 Resource: !Ref DeployNotificationTopic
   LambdaPushHookHandlerRole:
@@ -311,39 +295,33 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: cloud-watch-logs
+        - PolicyName: cloud-watch-logs
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
                   - !Sub "arn:aws:logs:*:*:*"
-        -
-          PolicyName: codebuild-start-build
+        - PolicyName: codebuild-start-build
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - codebuild:StartBuild
                 Resource:
                   - !Sub
                     - "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${Project}"
-                    -
-                      Project: !Ref DeployBuildProject
+                    - Project: !Ref DeployBuildProject
 
   DeployServiceRole:
     Type: AWS::IAM::Role
@@ -351,8 +329,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
@@ -379,8 +356,7 @@ Resources:
                 Resource:
                   - !Sub
                     - "arn:aws:s3:::${Bucket}/*"
-                    -
-                      Bucket: !Ref DeployBucket
+                    - Bucket: !Ref DeployBucket
 
   PushHandlerLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -390,8 +366,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub
         - "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HookApi}/*/POST/hooks/push"
-        -
-          HookApi: !Ref GitHubPushHookRestApi
+        - HookApi: !Ref GitHubPushHookRestApi
   S3DeployLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -400,8 +375,7 @@ Resources:
       Principal: s3.amazonaws.com
       SourceArn: !Sub
         - "arn:aws:s3:::${Bucket}"
-        -
-          Bucket: !Ref DeployBucket
+        - Bucket: !Ref DeployBucket
 Outputs:
   DeployBucketInfo:
     Description: The bucket being deployed to.
@@ -416,8 +390,7 @@ Outputs:
     Description: The GitHub hooks API
     Value: !Sub
       - "https://${HookId}.execute-api.${AWS::Region}.amazonaws.com/LATEST/hooks/push"
-      -
-        HookId: !Ref GitHubPushHookRestApi
+      - HookId: !Ref GitHubPushHookRestApi
   S3DeployArn:
     Description: The ARN for the Lambda function that will deflate the build artifacts
     Value: !GetAtt LambdaS3DeployHandler.Arn
@@ -425,6 +398,5 @@ Outputs:
     Description: The command to run to hookup the S3 -> Lambda trigger
     Value: !Sub
       - "./bin/connect-s3-lambda -b ${Bucket} -l ${Lambda}"
-      -
-        Bucket: !Ref DeployBucket
+      - Bucket: !Ref DeployBucket
         Lambda: !GetAtt LambdaS3DeployHandler.Arn
